@@ -87,7 +87,11 @@ class TestProbeSpec extends AkkaSpec with DefaultTimeout {
 
     "watch actors when queue non-empty" in {
       val probe = TestProbe()
-      val target = system.actorFor("/nonexistent") // deadLetters does not send Terminated
+      // deadLetters does not send Terminated
+      val target = {
+        system.actorSelection("/nonexistent").tell(Identify, probe.ref)
+        probe.expectMsgType[ActorIdentity].ref
+      }
       probe.ref ! "hello"
       probe watch target
       probe.expectMsg(1.seconds, "hello")

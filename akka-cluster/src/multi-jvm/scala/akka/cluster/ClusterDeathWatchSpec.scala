@@ -20,6 +20,8 @@ import akka.actor.Address
 import akka.remote.RemoteActorRef
 import java.util.concurrent.TimeoutException
 import akka.actor.ActorSystemImpl
+import akka.actor.ActorIdentity
+import akka.actor.Identify
 
 object ClusterDeathWatchMultiJvmSpec extends MultiNodeConfig {
   val first = role("first")
@@ -65,12 +67,18 @@ abstract class ClusterDeathWatchSpec
 
         val path2 = RootActorPath(second) / "user" / "subject"
         val path3 = RootActorPath(third) / "user" / "subject"
-        val watchEstablished = TestLatch(1)
+        val watchEstablished = TestLatch(2)
         system.actorOf(Props(new Actor {
-          context.watch(context.actorFor(path2))
-          context.watch(context.actorFor(path3))
-          watchEstablished.countDown
+          context.actorSelection(path2) ! Identify(path2)
+          context.actorSelection(path3) ! Identify(path3)
+
           def receive = {
+            case ActorIdentity(ref, `path2`) ⇒
+              context.watch(ref)
+              watchEstablished.countDown
+            case ActorIdentity(ref, `path3`) ⇒
+              context.watch(ref)
+              watchEstablished.countDown
             case t: Terminated ⇒ testActor ! t.actor.path
           }
         }), name = "observer1")

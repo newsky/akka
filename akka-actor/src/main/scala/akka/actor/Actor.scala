@@ -5,10 +5,11 @@
 package akka.actor
 
 import akka.AkkaException
+import scala.collection.immutable
+import scala.annotation.tailrec
 import scala.reflect.BeanProperty
 import scala.util.control.NoStackTrace
 import java.util.regex.Pattern
-import scala.annotation.tailrec
 
 /**
  * INTERNAL API
@@ -53,6 +54,32 @@ case object Kill extends Kill {
    */
   def getInstance = this
 }
+
+/**
+ * A message all Actors will understand, that when processed will reply with
+ * [[akka.actor.ActorIdentity]] containing the `ActorRef`. The `messageId`
+ * is returned in the `ActorIdentity` message as `correlationId`.
+ * Non-matching requests will reply with [[akka.actor.UnknownActorIdentity]]
+ * on a best-effort basis.
+ */
+@SerialVersionUID(1L)
+case class Identify(messageId: Any) extends AutoReceivedMessage
+
+/**
+ * Reply to [[akka.actor.Identify]].
+ * The `correlationId` is taken from the `messageId` in
+ * the `Identify` message.
+ */
+@SerialVersionUID(1L)
+case class ActorIdentity(ref: ActorRef, correlationId: Any)
+
+/**
+ * Reply for non-matching [[akka.actor.Identify]] request.
+ * The `correlationId` is taken from the `messageId` in
+ * the `Identify` message.
+ */
+@SerialVersionUID(1L)
+case class UnknownActorIdentity(correlationId: Any)
 
 /**
  * When Death Watch is used, the watcher will receive a Terminated(watched)
@@ -100,17 +127,45 @@ case object ReceiveTimeout extends ReceiveTimeout {
 }
 
 /**
+ * INTERNAL API
  * ActorRefFactory.actorSelection returns a special ref which sends these
  * nested path descriptions whenever using ! on them, the idea being that the
  * message is delivered by active routing of the various actors involved.
  */
-sealed trait SelectionPath extends AutoReceivedMessage with PossiblyHarmful
+private[akka] sealed trait SelectionPath extends AutoReceivedMessage with PossiblyHarmful
 
 /**
  * INTERNAL API
  */
 @SerialVersionUID(1L)
-private[akka] case class SelectChildName(name: String, next: Any) extends SelectionPath
+private[akka] case class SelectChildName(name: String, next: Any) extends SelectionPath {
+
+  def last: Any = {
+    @tailrec def rec(nx: Any): Any = nx match {
+      case SelectChildName(_, n)    ⇒ rec(n)
+      case SelectChildPattern(_, n) ⇒ rec(n)
+      case SelectParent(n)          ⇒ rec(n)
+      case x                        ⇒ x
+    }
+    rec(next)
+  }
+
+  def identifyRequest: Option[Identify] = last match {
+    case x: Identify ⇒ Some(x)
+    case _           ⇒ None
+  }
+
+  def allChildNames: immutable.Iterable[String] = {
+    @tailrec def rec(nx: Any, acc: List[String]): List[String] = nx match {
+      case SelectChildName(name, n)       ⇒ rec(n, name :: acc)
+      case SelectChildPattern(_, n)       ⇒ throw new IllegalArgumentException("SelectChildPattern not allowed")
+      case SelectParent(n) if acc.isEmpty ⇒ rec(n, acc)
+      case SelectParent(n)                ⇒ rec(n, acc.tail)
+      case _                              ⇒ acc
+    }
+    rec(this, Nil).reverse
+  }
+}
 
 /**
  * INTERNAL API
