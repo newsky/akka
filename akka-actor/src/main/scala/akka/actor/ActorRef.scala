@@ -494,7 +494,7 @@ private[akka] class EmptyLocalActorRef(override val provider: ActorRefProvider,
     case Identify(messageId) ⇒
       sender ! UnknownActorIdentity(messageId)
       true
-    case s @ SelectChildName(_, _) ⇒
+    case s: SelectChildName ⇒
       s.identifyRequest foreach { x ⇒ sender ! UnknownActorIdentity(x.messageId) }
       true
     case _ ⇒ false
@@ -514,9 +514,7 @@ private[akka] class DeadLetterActorRef(_provider: ActorRefProvider,
   override def !(message: Any)(implicit sender: ActorRef = this): Unit = message match {
     case null                ⇒ throw new InvalidMessageException("Message is null")
     case Identify(messageId) ⇒ sender ! ActorIdentity(this, messageId)
-    case s @ SelectChildName(_, _) ⇒
-      s.identifyRequest foreach { x ⇒ sender ! UnknownActorIdentity(x.messageId) }
-    case d: DeadLetter ⇒ if (!specialHandle(d.message, d.sender)) eventStream.publish(d)
+    case d: DeadLetter       ⇒ if (!specialHandle(d.message, d.sender)) eventStream.publish(d)
     case _ ⇒ if (!specialHandle(message, sender))
       eventStream.publish(DeadLetter(message, if (sender eq Actor.noSender) provider.deadLetters else sender, this))
   }
@@ -530,7 +528,7 @@ private[akka] class DeadLetterActorRef(_provider: ActorRefProvider,
     case Identify(messageId) ⇒
       sender ! UnknownActorIdentity(messageId)
       true
-    case s @ SelectChildName(_, _) ⇒
+    case s: SelectChildName ⇒
       s.identifyRequest foreach { x ⇒ sender ! UnknownActorIdentity(x.messageId) }
       true
     case NullMessage ⇒ true
