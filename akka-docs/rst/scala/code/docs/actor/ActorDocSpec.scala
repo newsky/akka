@@ -327,6 +327,31 @@ class ActorDocSpec extends AkkaSpec(Map("akka.loglevel" -> "INFO")) {
     expectMsg("finished")
   }
 
+  "using Identify" in {
+    //#identify
+    import akka.actor.{ Actor, Props, Identify, ActorIdentity, UnknownActorIdentity, Terminated }
+
+    class Follower extends Actor {
+      val identifyId = 1
+      context.actorSelection("/user/another") ! Identify(identifyId)
+
+      def receive = {
+        case ActorIdentity(ref, `identifyId`)                ⇒ context.watch(ref)
+        case UnknownActorIdentity(`identifyId`)              ⇒ context.stop(self)
+        case Terminated(ref) if (ref.path.name == "another") ⇒ context.stop(self)
+      }
+    }
+    //#identify
+
+    val a = system.actorOf(Props(new Actor {
+      def receive = Actor.emptyBehavior
+    }))
+    val b = system.actorOf(Props(new Follower))
+    watch(b)
+    system.stop(a)
+    expectMsgType[akka.actor.Terminated].actor must be === b
+  }
+
   "using pattern gracefulStop" in {
     val actorRef = system.actorOf(Props[MyActor])
     //#gracefulStop
@@ -386,9 +411,9 @@ class ActorDocSpec extends AkkaSpec(Map("akka.loglevel" -> "INFO")) {
     lastSender must be === actor
     actor ! me
     expectMsg("reply")
-    lastSender must be === system.actorFor("/user")
+    lastSender.path.elements.mkString("/", "/", "") must be === "/user"
     expectMsg("reply")
-    lastSender must be === system.actorFor("/user")
+    lastSender.path.elements.mkString("/", "/", "") must be === "/user"
   }
 
   "using ActorDSL outside of akka.actor package" in {
