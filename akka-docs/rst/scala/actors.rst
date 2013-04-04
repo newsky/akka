@@ -374,6 +374,8 @@ to run after message queuing has been disabled for this actor, i.e. messages
 sent to a stopped actor will be redirected to the :obj:`deadLetters` of the
 :obj:`ActorSystem`.
 
+.. _actorSelection-scala:
+
 Identifying Actors via Actor Selection
 ======================================
 
@@ -387,8 +389,10 @@ actors may look up other actors by specifying absolute or relative
 paths—logical or physical—and receive back an :class:`ActorSelection` with the
 result::
 
-  context.actorSelection("/user/serviceA/aggregator") // will look up this absolute path
-  context.actorSelection("../joe") // will look up sibling beneath same supervisor
+  // will look up this absolute path
+  context.actorSelection("/user/serviceA/aggregator")
+  // will look up sibling beneath same supervisor
+  context.actorSelection("../joe")
 
 The supplied path is parsed as a :class:`java.net.URI`, which basically means
 that it is split on ``/`` into path elements. If the path starts with ``/``, it
@@ -399,21 +403,42 @@ currently traversed actor, otherwise it will step “down” to the named child.
 It should be noted that the ``..`` in actor paths here always means the logical
 structure, i.e. the supervisor.
 
+The path elements of an actor selection may contain wildcard patterns allowing for
+broadcasting of messages to that section::
+
+  // will look all children to serviceB with names starting with worker
+  context.actorSelection("/user/serviceB/worker*")
+  // will look up all siblings beneath same supervisor
+  context.actorSelection("../*")
+
 Messages can be sent via the :class:`ActorSelection` and the path of the
 :class:`ActorSelection` is looked up when delivering each message. If the selection
 does not match any actors the message will be dropped.
 
-To aquire a :class:`ActorRef` for an :class:`ActorSelection` you need to
-send a message to the actor and use the ``sender`` reference of a reply from
+To acquire an :class:`ActorRef` for an :class:`ActorSelection` you need to
+send a message to the selection and use the ``sender`` reference of the reply from
 the actor. There is a built-in ``Identify`` message that all Actors will understand
 and automatically reply to with a ``ActorIdentity`` message containing the
 :class:`ActorRef`.
 
 .. includecode:: code/docs/actor/ActorDocSpec.scala#identify
 
-Remote actor addresses may also be looked up, if remoting is enabled::
+Remote actor addresses may also be looked up, if :ref:`remoting <remoting-scala>` is enabled::
 
   context.actorSelection("akka.tcp://app@otherhost:1234/user/serviceB")
+
+An example demonstrating actor look-up is given in :ref:`remote-lookup-sample-scala`.
+
+.. note::
+
+  ``actorFor`` is deprecated in favor of ``actorSelection`` because actor references
+  acquired with ``actorFor`` behaves different for local and remote actors.
+  In the case of a local actor reference, the named actor needs to exist before the
+  lookup, or else the acquired reference will be an :class:`EmptyLocalActorRef`.
+  This will be true even if an actor with that exact path is created after acquiring
+  the actor reference. For remote actor references acquired with `actorFor` the
+  behaviour is different and sending messages to such a reference will under the hood
+  look up the actor by path on the remote system for every message send.
 
 Messages and immutability
 =========================
