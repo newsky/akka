@@ -525,8 +525,10 @@ class RemotingSpec extends AkkaSpec(RemotingSpec.cfg) with ImplicitSender with D
         val otherGuyRemoteTest = otherGuy.path.toSerializationFormatWithAddress(addr(otherSystem, "test"))
         val remoteEchoHereSsl = system.actorFor(s"akka.ssl.tcp://remote-sys@localhost:${port(remoteSystem, "ssl.tcp")}/user/echo")
         val proxySsl = system.actorOf(Props(new Proxy(remoteEchoHereSsl, testActor)), "proxy-ssl")
-        proxySsl ! otherGuy
-        expectMsg(3.seconds, ("pong", otherGuyRemoteTest))
+        EventFilter[RemoteTransportException](start = "Error while resolving address", occurrences = 1).intercept {
+          proxySsl ! otherGuy
+          expectMsg(3.seconds, ("pong", otherGuyRemoteTest))
+        }(otherSystem)
       } finally {
         otherSystem.shutdown()
         otherSystem.awaitTermination(5.seconds.dilated)

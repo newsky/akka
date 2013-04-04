@@ -243,7 +243,7 @@ private[akka] class RemoteActorRefProvider(
               new RemoteActorRef(transport, localAddress, rpath, supervisor, Some(props), Some(d))
             } catch {
               case NonFatal(e) ⇒
-                log.error(e, "Error while looking up address {}", addr)
+                log.error(e, "Error while looking up address [{}]", addr)
                 new EmptyLocalActorRef(this, path, eventStream)
             }
           }
@@ -261,7 +261,7 @@ private[akka] class RemoteActorRefProvider(
         path, Nobody, props = None, deploy = None)
     } catch {
       case NonFatal(e) ⇒
-        log.error(e, "Error while looking up address {}", path.address)
+        log.error(e, "Error while looking up address [{}]", path.address)
         new EmptyLocalActorRef(this, path, eventStream)
     }
   }
@@ -277,7 +277,7 @@ private[akka] class RemoteActorRefProvider(
             rootPath, Nobody, props = None, deploy = None)
         } catch {
           case NonFatal(e) ⇒
-            log.error(e, "Error while looking up address {}", rootPath.address)
+            log.error(e, "Error while looking up address [{}]", rootPath.address)
             new EmptyLocalActorRef(this, rootPath, eventStream)
         }
       }
@@ -302,7 +302,7 @@ private[akka] class RemoteActorRefProvider(
       case ActorPathExtractor(address, elems) ⇒
         if (hasAddress(address)) local.resolveActorRef(rootGuardian, elems)
         else
-          new RemoteActorRef(transport, localAddress, new RootActorPath(address) / elems,
+          new RemoteActorRef(transport, localAddress, RootActorPath(address) / elems,
             Nobody, props = None, deploy = None)
       case _ ⇒
         log.debug("resolve of unknown path [{}] failed", path)
@@ -313,9 +313,17 @@ private[akka] class RemoteActorRefProvider(
   def resolveActorRef(path: String): ActorRef = path match {
     case ActorPathExtractor(address, elems) ⇒
       if (hasAddress(address)) local.resolveActorRef(rootGuardian, elems)
-      else
-        new RemoteActorRef(transport, transport.localAddressForRemote(address), new RootActorPath(address) / elems,
-          Nobody, props = None, deploy = None)
+      else {
+        val rootPath = RootActorPath(address) / elems
+        try {
+          new RemoteActorRef(transport, transport.localAddressForRemote(address),
+            rootPath, Nobody, props = None, deploy = None)
+        } catch {
+          case NonFatal(e) ⇒
+            log.error(e, "Error while resolving address [{}]", rootPath.address)
+            new EmptyLocalActorRef(this, rootPath, eventStream)
+        }
+      }
     case _ ⇒
       log.debug("resolve of unknown path [{}] failed", path)
       deadLetters
@@ -328,7 +336,7 @@ private[akka] class RemoteActorRefProvider(
         path, Nobody, props = None, deploy = None)
     } catch {
       case NonFatal(e) ⇒
-        log.error(e, "Error while looking up address {}", path.address)
+        log.error(e, "Error while resolving address [{}]", path.address)
         new EmptyLocalActorRef(this, path, eventStream)
     }
   }
