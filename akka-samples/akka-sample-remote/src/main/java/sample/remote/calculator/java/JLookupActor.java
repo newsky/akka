@@ -6,7 +6,6 @@ package sample.remote.calculator.java;
 import akka.actor.ActorRef;
 import akka.actor.ActorIdentity;
 import akka.actor.Identify;
-import akka.actor.UnknownActorIdentity;
 import akka.actor.UntypedActor;
 import akka.actor.ReceiveTimeout;
 
@@ -29,10 +28,7 @@ public class JLookupActor extends UntypedActor {
   public void onReceive(Object message) throws Exception {
 
     if (message instanceof ActorIdentity) {
-      remoteActor = ((ActorIdentity) message).ref();
-
-    } else if (message instanceof UnknownActorIdentity) {
-      System.out.println("Remote actor not availible: " + path);
+      remoteActor = ((ActorIdentity) message).getRef();
 
     } else if (message.equals(ReceiveTimeout.getInstance())) {
       sendIdentifyRequest();
@@ -46,13 +42,11 @@ public class JLookupActor extends UntypedActor {
 
     } else if (message instanceof Op.AddResult) {
       Op.AddResult result = (Op.AddResult) message;
-      System.out.printf("Add result: %d + %d = %d\n",
-          result.getN1(), result.getN2(), result.getResult());
+      System.out.printf("Add result: %d + %d = %d\n", result.getN1(), result.getN2(), result.getResult());
 
     } else if (message instanceof Op.SubtractResult) {
       Op.SubtractResult result = (Op.SubtractResult) message;
-      System.out.printf("Sub result: %d - %d = %d\n",
-          result.getN1(), result.getN2(), result.getResult());
+      System.out.printf("Sub result: %d - %d = %d\n", result.getN1(), result.getN2(), result.getResult());
 
     } else {
       unhandled(message);

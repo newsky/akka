@@ -88,11 +88,11 @@ object ActorSelection {
    */
   def apply(anchor: ActorRef, elements: immutable.Iterable[String]): ActorSelection = {
     // TODO #3073 optimize/align compiled Array
-    val elems = elements.filterNot(_.isEmpty).toArray
+    val elems: Array[String] = elements.collect { case x if x.nonEmpty ⇒ x }(collection.breakOut)
     val compiled: Array[AnyRef] = elems map (x ⇒ if ((x.indexOf('?') != -1) || (x.indexOf('*') != -1)) Helpers.makePattern(x) else x)
     new ActorSelection with ScalaActorSelection {
-      def target = anchor
-      def path = compiled
+      override def target = anchor
+      override def path = compiled
     }
   }
 

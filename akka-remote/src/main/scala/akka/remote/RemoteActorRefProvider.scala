@@ -253,7 +253,7 @@ private[akka] class RemoteActorRefProvider(
     }
   }
 
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(path: ActorPath): InternalActorRef = {
     if (hasAddress(path.address)) actorFor(rootGuardian, path.elements)
     else try {
@@ -266,7 +266,7 @@ private[akka] class RemoteActorRefProvider(
     }
   }
 
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(ref: InternalActorRef, path: String): InternalActorRef = path match {
     case ActorPathExtractor(address, elems) ⇒
       if (hasAddress(address)) actorFor(rootGuardian, elems)
@@ -284,7 +284,7 @@ private[akka] class RemoteActorRefProvider(
     case _ ⇒ local.actorFor(ref, path)
   }
 
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(ref: InternalActorRef, path: Iterable[String]): InternalActorRef =
     local.actorFor(ref, path)
 

@@ -73,13 +73,13 @@ abstract class ClusterDeathWatchSpec
           context.actorSelection(path3) ! Identify(path3)
 
           def receive = {
-            case ActorIdentity(ref, `path2`) ⇒
+            case ActorIdentity(`path2`, Some(ref)) ⇒
               context.watch(ref)
               watchEstablished.countDown
-            case ActorIdentity(ref, `path3`) ⇒
+            case ActorIdentity(`path3`, Some(ref)) ⇒
               context.watch(ref)
               watchEstablished.countDown
-            case t: Terminated ⇒ testActor ! t.actor.path
+            case Terminated(actor) ⇒ testActor ! actor.path
           }
         }), name = "observer1")
 

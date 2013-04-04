@@ -18,7 +18,6 @@ import akka.actor.SelectChildName
 import akka.actor.SelectChildPattern
 import akka.actor.Identify
 import akka.actor.ActorIdentity
-import akka.actor.UnknownActorIdentity
 
 /**
  * INTERNAL API
@@ -117,15 +116,15 @@ private[akka] class RemoteSystemDaemon(
     case s @ SelectChildName(name, m) ⇒
       getChild(s.allChildNames.iterator) match {
         case Nobody ⇒
-          s.identifyRequest foreach { x ⇒ sender ! UnknownActorIdentity(x.messageId) }
+          s.identifyRequest foreach { x ⇒ sender ! ActorIdentity(x.messageId, None) }
         case child ⇒
-          child.tell(s.last, sender)
+          child.tell(s.wrappedMessage, sender)
       }
 
     case SelectChildPattern(p, m) ⇒
       log.error("SelectChildPattern not allowed in actorSelection of remote deployed actors")
 
-    case Identify(messageId) ⇒ sender ! ActorIdentity(this, messageId)
+    case Identify(messageId) ⇒ sender ! ActorIdentity(messageId, Some(this))
 
     case Terminated(child: ActorRefWithCell) if child.asInstanceOf[ActorRefScope].isLocal ⇒
       terminating.locked {

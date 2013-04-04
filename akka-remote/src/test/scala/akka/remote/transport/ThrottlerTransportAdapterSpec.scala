@@ -68,7 +68,7 @@ class ThrottlerTransportAdapterSpec extends AkkaSpec(configA) with ImplicitSende
   val rootB = RootActorPath(systemB.asInstanceOf[ExtendedActorSystem].provider.getDefaultAddress)
   val here = {
     system.actorSelection(rootB / "user" / "echo") ! Identify(None)
-    expectMsgType[ActorIdentity].ref
+    expectMsgType[ActorIdentity].ref.get
   }
 
   def throttle(direction: Direction, mode: ThrottleMode): Boolean = {

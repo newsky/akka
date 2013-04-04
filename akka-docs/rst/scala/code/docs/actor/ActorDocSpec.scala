@@ -329,15 +329,15 @@ class ActorDocSpec extends AkkaSpec(Map("akka.loglevel" -> "INFO")) {
 
   "using Identify" in {
     //#identify
-    import akka.actor.{ Actor, Props, Identify, ActorIdentity, UnknownActorIdentity, Terminated }
+    import akka.actor.{ Actor, Props, Identify, ActorIdentity, Terminated }
 
     class Follower extends Actor {
       val identifyId = 1
       context.actorSelection("/user/another") ! Identify(identifyId)
 
       def receive = {
-        case ActorIdentity(ref, `identifyId`)                ⇒ context.watch(ref)
-        case UnknownActorIdentity(`identifyId`)              ⇒ context.stop(self)
+        case ActorIdentity(`identifyId`, Some(ref))          ⇒ context.watch(ref)
+        case ActorIdentity(`identifyId`, None)               ⇒ context.stop(self)
         case Terminated(ref) if (ref.path.name == "another") ⇒ context.stop(self)
       }
     }

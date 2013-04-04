@@ -141,7 +141,7 @@ abstract class Ticket1978CommunicationSpec(val cipherConfig: CipherConfig) exten
       "support tell" in {
         val here = {
           system.actorSelection(otherAddress.toString + "/user/echo") ! Identify(None)
-          expectMsgType[ActorIdentity].ref
+          expectMsgType[ActorIdentity].ref.get
         }
 
         for (i ← 1 to 1000) here ! (("ping", i))
@@ -152,7 +152,7 @@ abstract class Ticket1978CommunicationSpec(val cipherConfig: CipherConfig) exten
         import system.dispatcher
         val here = {
           system.actorSelection(otherAddress.toString + "/user/echo") ! Identify(None)
-          expectMsgType[ActorIdentity].ref
+          expectMsgType[ActorIdentity].ref.get
         }
 
         val f = for (i ← 1 to 1000) yield here ? (("ping", i)) mapTo classTag[((String, Int), ActorRef)]

@@ -78,7 +78,7 @@ class AkkaProtocolStressTest extends AkkaSpec(configA) with ImplicitSender with 
   val here = {
     val path =
       system.actorSelection(rootB / "user" / "echo") ! Identify(None)
-    expectMsgType[ActorIdentity].ref
+    expectMsgType[ActorIdentity].ref.get
   }
 
   "AkkaProtocolTransport" must {

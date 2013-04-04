@@ -27,7 +27,6 @@ import akka.actor.Terminated
 import akka.actor.Identify
 import akka.actor.ActorIdentity
 import akka.actor.ActorSelection
-import akka.actor.ActorIdentity
 
 object ClusterSingletonManagerSpec extends MultiNodeConfig {
   val controller = role("controller")
@@ -228,7 +227,7 @@ class ClusterSingletonManagerSpec extends MultiNodeSpec(ClusterSingletonManagerS
 
   def queue: ActorRef = {
     system.actorSelection(node(controller) / "user" / "queue").tell(Identify("queue"), identifyProbe.ref)
-    identifyProbe.expectMsgType[ActorIdentity].ref
+    identifyProbe.expectMsgType[ActorIdentity].ref.get
   }
 
   def join(from: RoleName, to: RoleName): Unit = {
@@ -350,9 +349,12 @@ class ClusterSingletonManagerSpec extends MultiNodeSpec(ClusterSingletonManagerS
 
       runOn(leaveRole) {
         system.actorSelection("/user/singleton").tell(Identify("singleton"), identifyProbe.ref)
-        val singleton = identifyProbe.expectMsgType[ActorIdentity].ref
-        watch(singleton)
-        expectMsgType[Terminated].actor must be(singleton)
+        identifyProbe.expectMsgPF() {
+          case ActorIdentity("singleton", None) ⇒ // already terminated
+          case ActorIdentity("singleton", Some(singleton)) ⇒
+            watch(singleton)
+            expectMsgType[Terminated].actor must be(singleton)
+        }
       }
 
       enterBarrier("after-leave")

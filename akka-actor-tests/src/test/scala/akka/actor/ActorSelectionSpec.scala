@@ -56,8 +56,7 @@ class ActorSelectionSpec extends AkkaSpec("akka.loglevel=DEBUG") with DefaultTim
   def identify(selection: ActorSelection): Option[ActorRef] = {
     selection.tell(Identify(selection), idProbe.ref)
     idProbe.expectMsgPF() {
-      case ActorIdentity(ref, `selection`)   ⇒ Some(ref)
-      case UnknownActorIdentity(`selection`) ⇒ None
+      case ActorIdentity(`selection`, ref) ⇒ ref
     }
   }
 
@@ -150,7 +149,7 @@ class ActorSelectionSpec extends AkkaSpec("akka.loglevel=DEBUG") with DefaultTim
       identify("system/") must be === Some(syst)
     }
 
-    "return deadLetters or UnknowActorIdentity, respectively, for non-existing paths" in {
+    "return deadLetters or ActorIdentity(None), respectively, for non-existing paths" in {
       identify("a/b/c") must be === None
       identify("a/b/c") must be === None
       identify("akka://all-systems/Nobody") must be === None
@@ -244,7 +243,7 @@ class ActorSelectionSpec extends AkkaSpec("akka.loglevel=DEBUG") with DefaultTim
       for (target ← Seq(root, syst, user)) check(target)
     }
 
-    "return deadLetters or UnknownActorIdentity, respectively, for non-existing paths" in {
+    "return deadLetters or ActorIdentity(None), respectively, for non-existing paths" in {
       import scala.collection.JavaConverters._
 
       def checkOne(looker: ActorRef, query: Query, result: Option[ActorRef]) {

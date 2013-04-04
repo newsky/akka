@@ -4,7 +4,6 @@
 package docs.actor;
 
 //#imports
-import akka.actor.ActorIdentity;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
@@ -421,8 +420,13 @@ public class UntypedActorDocTestBase {
     public void onReceive(Object message) {
       if (message instanceof ActorIdentity) {
         ActorIdentity identity = (ActorIdentity) message;
-        if (identity.correlationId().equals(identifyId))
-          getContext().watch(identity.ref());
+        if (identity.correlationId().equals(identifyId)) {
+          ActorRef ref = identity.getRef();
+          if (ref == null)
+            getContext().stop(getSelf());
+          else
+            getContext().watch(ref);
+        }
       } else if (message instanceof Terminated) {
         final Terminated t = (Terminated) message;
         if (t.getActor().path().name().equals("another")) {

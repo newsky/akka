@@ -383,18 +383,18 @@ class RemotingSpec extends AkkaSpec(RemotingSpec.cfg) with ImplicitSender with D
       lastSender must be theSameInstanceAs grandchild
       mysel ! Identify(mysel)
       val grandchild2 = expectMsgType[ActorIdentity].ref
-      grandchild2 must be === grandchild
+      grandchild2 must be === Some(grandchild)
       system.actorSelection("/user/looker2/child") ! Identify(None)
-      expectMsgType[ActorIdentity].ref must be === child
+      expectMsgType[ActorIdentity].ref must be === Some(child)
       l ! ActorSelReq("child/..")
       expectMsgType[ActorSelection] ! Identify(None)
-      expectMsgType[ActorIdentity].ref must be theSameInstanceAs l
+      expectMsgType[ActorIdentity].ref.get must be theSameInstanceAs l
       system.actorSelection(system / "looker2" / "child") ! ActorSelReq("..")
       expectMsgType[ActorSelection] ! Identify(None)
-      expectMsgType[ActorIdentity].ref must be theSameInstanceAs l
+      expectMsgType[ActorIdentity].ref.get must be theSameInstanceAs l
 
       child ! Identify("idReq1")
-      expectMsg(ActorIdentity(`child`, "idReq1"))
+      expectMsg(ActorIdentity("idReq1", Some(child)))
       watch(child)
       child ! PoisonPill
       expectMsg("postStop")
@@ -402,11 +402,11 @@ class RemotingSpec extends AkkaSpec(RemotingSpec.cfg) with ImplicitSender with D
       l ! (Props[Echo1], "child")
       val child2 = expectMsgType[ActorRef]
       child2 ! Identify("idReq2")
-      expectMsg(ActorIdentity(`child2`, "idReq2"))
+      expectMsg(ActorIdentity("idReq2", Some(child2)))
       system.actorSelection(child.path) ! Identify("idReq3")
-      expectMsg(ActorIdentity(`child2`, "idReq3"))
+      expectMsg(ActorIdentity("idReq3", Some(child2)))
       child ! Identify("idReq4")
-      expectMsg(UnknownActorIdentity("idReq4"))
+      expectMsg(ActorIdentity("idReq4", None))
 
       child2 ! 55
       expectMsg(55)

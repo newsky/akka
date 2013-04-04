@@ -39,7 +39,7 @@ class TestConductorSpec extends MultiNodeSpec(TestConductorMultiJvmSpec) with ST
 
   lazy val echo = {
     system.actorSelection(node(master) / "user" / "echo") ! Identify(None)
-    expectMsgType[ActorIdentity].ref
+    expectMsgType[ActorIdentity].ref.get
   }
 
   "A TestConductor" must {

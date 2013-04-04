@@ -13,7 +13,6 @@ import com.typesafe.config.ConfigFactory
 import akka.actor.{ ActorRef, Props, Actor, ActorSystem }
 import akka.actor.Identify
 import akka.actor.ActorIdentity
-import akka.actor.UnknownActorIdentity
 import akka.kernel.Bootable
 import akka.actor.ReceiveTimeout
 //#imports
@@ -48,12 +47,12 @@ class LookupActor(path: String) extends Actor {
     context.actorSelection(path) ! Identify(path)
 
   def receive = {
-    case ActorIdentity(actor, `path`) ⇒
+    case ActorIdentity(`path`, Some(actor)) ⇒
       context.setReceiveTimeout(Duration.Undefined)
       context.become(active(actor))
-    case UnknownActorIdentity(`path`) ⇒ println(s"Remote actor not availible: $path")
-    case ReceiveTimeout               ⇒ sendIdentifyRequest()
-    case _                            ⇒ println("Not ready yet")
+    case ActorIdentity(`path`, None) ⇒ println(s"Remote actor not availible: $path")
+    case ReceiveTimeout              ⇒ sendIdentifyRequest()
+    case _                           ⇒ println("Not ready yet")
   }
 
   def active(actor: ActorRef): Actor.Receive = {

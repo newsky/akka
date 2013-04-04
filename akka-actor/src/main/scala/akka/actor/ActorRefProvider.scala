@@ -117,7 +117,7 @@ trait ActorRefProvider {
    * Create actor reference for a specified local or remote path. If no such
    * actor exists, it will be (equivalent to) a dead letter reference.
    */
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(path: ActorPath): InternalActorRef
 
   /**
@@ -126,7 +126,7 @@ trait ActorRefProvider {
    * (equivalent to) a dead letter reference. If `s` is a relative URI, resolve
    * it relative to the given ref.
    */
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(ref: InternalActorRef, s: String): InternalActorRef
 
   /**
@@ -135,7 +135,7 @@ trait ActorRefProvider {
    * i.e. it cannot be used to obtain a reference to an actor which is not
    * physically or logically attached to this actor system.
    */
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(ref: InternalActorRef, p: Iterable[String]): InternalActorRef
 
   /**
@@ -237,7 +237,7 @@ trait ActorRefFactory {
    * `watch(ref)` to be notified of the target’s termination, which is also
    * signaled if the queried path cannot be resolved.
    */
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(path: ActorPath): ActorRef = provider.actorFor(path)
 
   /**
@@ -254,7 +254,7 @@ trait ActorRefFactory {
    * relative to the current context as described for look-ups by
    * `actorOf(Iterable[String])`
    */
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(path: String): ActorRef = provider.actorFor(lookupRoot, path)
 
   /**
@@ -275,7 +275,7 @@ trait ActorRefFactory {
    *
    * For maximum performance use a collection with efficient head & tail operations.
    */
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(path: Iterable[String]): ActorRef = provider.actorFor(lookupRoot, path)
 
   /**
@@ -299,7 +299,7 @@ trait ActorRefFactory {
    *
    * For maximum performance use a collection with efficient head & tail operations.
    */
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   def actorFor(path: java.lang.Iterable[String]): ActorRef = provider.actorFor(lookupRoot, immutableSeq(path))
 
   /**
@@ -604,7 +604,7 @@ private[akka] class LocalActorRefProvider private[akka] (
     eventStream.startDefaultLoggers(_system)
   }
 
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   override def actorFor(ref: InternalActorRef, path: String): InternalActorRef = path match {
     case RelativeActorPath(elems) ⇒
       if (elems.isEmpty) {
@@ -618,7 +618,7 @@ private[akka] class LocalActorRefProvider private[akka] (
       deadLetters
   }
 
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   override def actorFor(path: ActorPath): InternalActorRef =
     if (path.root == rootPath) actorFor(rootGuardian, path.elements)
     else {
@@ -626,7 +626,7 @@ private[akka] class LocalActorRefProvider private[akka] (
       deadLetters
     }
 
-  @deprecated("use actorSelection", "2.2")
+  @deprecated("use actorSelection instead of actorFor", "2.2")
   override def actorFor(ref: InternalActorRef, path: Iterable[String]): InternalActorRef =
     if (path.isEmpty) {
       log.debug("look-up of empty path sequence fails (per definition)")

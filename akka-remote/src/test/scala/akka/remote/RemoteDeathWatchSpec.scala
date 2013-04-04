@@ -49,10 +49,10 @@ akka {
     expectMsg(60.seconds, path)
   }
 
-  "receive UnknownActorIdentity when identified node is unknown host" in {
+  "receive ActorIdentity(None) when identified node is unknown host" in {
     val path = RootActorPath(Address("akka.tcp", system.name, "unknownhost", 2552)) / "user" / "subject"
     system.actorSelection(path) ! Identify(path)
-    expectMsg(60.seconds, UnknownActorIdentity(path))
+    expectMsg(60.seconds, ActorIdentity(path, None))
   }
 
 }

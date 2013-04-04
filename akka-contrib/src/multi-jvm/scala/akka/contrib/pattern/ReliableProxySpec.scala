@@ -70,7 +70,7 @@ class ReliableProxySpec extends MultiNodeSpec(ReliableProxySpec) with STMultiNod
         import akka.contrib.pattern.ReliableProxy
 
         system.actorSelection(node(remote) / "user" / "echo") ! Identify("echo")
-        target = expectMsgType[ActorIdentity].ref
+        target = expectMsgType[ActorIdentity].ref.get
         proxy = system.actorOf(Props(new ReliableProxy(target, 100.millis)), "proxy")
         //#demo
         proxy ! FSM.SubscribeTransitionCallBack(testActor)

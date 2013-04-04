@@ -59,27 +59,25 @@ case object Kill extends Kill {
  * A message all Actors will understand, that when processed will reply with
  * [[akka.actor.ActorIdentity]] containing the `ActorRef`. The `messageId`
  * is returned in the `ActorIdentity` message as `correlationId`.
- * Non-matching requests will reply with [[akka.actor.UnknownActorIdentity]]
- * on a best-effort basis.
  */
 @SerialVersionUID(1L)
 case class Identify(messageId: Any) extends AutoReceivedMessage
 
 /**
- * Reply to [[akka.actor.Identify]].
+ * Reply to [[akka.actor.Identify]]. Contains
+ * `Some(ref)` with the `ActorRef` of the actor replying to the request or
+ * `None` if no actor matched the request.
  * The `correlationId` is taken from the `messageId` in
  * the `Identify` message.
  */
 @SerialVersionUID(1L)
-case class ActorIdentity(ref: ActorRef, correlationId: Any)
-
-/**
- * Reply for non-matching [[akka.actor.Identify]] request.
- * The `correlationId` is taken from the `messageId` in
- * the `Identify` message.
- */
-@SerialVersionUID(1L)
-case class UnknownActorIdentity(correlationId: Any)
+case class ActorIdentity(correlationId: Any, ref: Option[ActorRef]) {
+  /**
+   * Java API: `ActorRef` of the actor replying to the request or
+   * null if no actor matched the request.
+   */
+  def getRef: ActorRef = ref.orNull
+}
 
 /**
  * When Death Watch is used, the watcher will receive a Terminated(watched)
@@ -140,7 +138,7 @@ private[akka] sealed trait SelectionPath extends AutoReceivedMessage with Possib
 @SerialVersionUID(1L)
 private[akka] case class SelectChildName(name: String, next: Any) extends SelectionPath {
 
-  def last: Any = {
+  def wrappedMessage: Any = {
     @tailrec def rec(nx: Any): Any = nx match {
       case SelectChildName(_, n)    ⇒ rec(n)
       case SelectChildPattern(_, n) ⇒ rec(n)
@@ -150,7 +148,7 @@ private[akka] case class SelectChildName(name: String, next: Any) extends Select
     rec(next)
   }
 
-  def identifyRequest: Option[Identify] = last match {
+  def identifyRequest: Option[Identify] = wrappedMessage match {
     case x: Identify ⇒ Some(x)
     case _           ⇒ None
   }

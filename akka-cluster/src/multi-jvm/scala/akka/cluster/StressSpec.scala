@@ -38,7 +38,6 @@ import akka.testkit._
 import akka.testkit.TestEvent._
 import akka.actor.Identify
 import akka.actor.ActorIdentity
-import akka.actor.UnknownActorIdentity
 
 /**
  * This test is intended to be used as long running stress test
@@ -696,10 +695,7 @@ abstract class StressSpec
 
   def clusterResultAggregator: Option[ActorRef] = {
     system.actorSelection(node(roles.head) / "user" / ("result" + step)).tell(Identify(step), identifyProbe.ref)
-    identifyProbe.expectMsgPF() {
-      case ActorIdentity(ref, _)   ⇒ Some(ref)
-      case UnknownActorIdentity(_) ⇒ None
-    }
+    identifyProbe.expectMsgType[ActorIdentity].ref
   }
 
   lazy val clusterResultHistory = system.actorOf(Props[ClusterResultHistory], "resultHistory")
@@ -789,7 +785,7 @@ abstract class StressSpec
     enterBarrier("watchee-created-" + step)
     runOn(roles.head) {
       system.actorSelection(node(removeRole) / "user" / "watchee").tell(Identify("watchee"), identifyProbe.ref)
-      val watchee = identifyProbe.expectMsgType[ActorIdentity].ref
+      val watchee = identifyProbe.expectMsgType[ActorIdentity].ref.get
       watch(watchee)
     }
     enterBarrier("watch-estabilished-" + step)
@@ -919,10 +915,7 @@ abstract class StressSpec
 
   def master: Option[ActorRef] = {
     system.actorSelection("/user/" + masterName).tell(Identify("master"), identifyProbe.ref)
-    identifyProbe.expectMsgPF() {
-      case ActorIdentity(ref, _)   ⇒ Some(ref)
-      case UnknownActorIdentity(_) ⇒ None
-    }
+    identifyProbe.expectMsgType[ActorIdentity].ref
   }
 
   def exerciseRouters(title: String, duration: FiniteDuration, batchInterval: FiniteDuration,

@@ -483,7 +483,7 @@ private[akka] class ActorCell(
             getChildByName(name) match {
               case Some(c: ChildRestartStats) ⇒ c.child.tell(m, msg.sender)
               case _ ⇒
-                s.identifyRequest foreach { x ⇒ sender ! UnknownActorIdentity(x.messageId) }
+                s.identifyRequest foreach { x ⇒ sender ! ActorIdentity(x.messageId, None) }
             }
           }
           // need this special case because of extraNames handled by rootGuardian
@@ -495,7 +495,7 @@ private[akka] class ActorCell(
           } else
             selectChild()
         case SelectChildPattern(p, m) ⇒ for (c ← children if p.matcher(c.path.name).matches) c.tell(m, msg.sender)
-        case Identify(messageId)      ⇒ sender ! ActorIdentity(self, messageId)
+        case Identify(messageId)      ⇒ sender ! ActorIdentity(messageId, Some(self))
       }
     }
 

@@ -335,6 +335,7 @@ private[akka] class LocalActorRef private[akka] (
   /**
    * Method for looking up a single child beneath this actor. Override in order
    * to inject “synthetic” actor paths like “/temp”.
+   * It is racy if called from the outside.
    */
   def getSingleChild(name: String): InternalActorRef = {
     val (childName, uid) = ActorCell.splitNameAndUid(name)
@@ -492,10 +493,10 @@ private[akka] class EmptyLocalActorRef(override val provider: ActorRefProvider,
       true
     case _: Unwatch ⇒ true // Just ignore
     case Identify(messageId) ⇒
-      sender ! UnknownActorIdentity(messageId)
+      sender ! ActorIdentity(messageId, None)
       true
     case s: SelectChildName ⇒
-      s.identifyRequest foreach { x ⇒ sender ! UnknownActorIdentity(x.messageId) }
+      s.identifyRequest foreach { x ⇒ sender ! ActorIdentity(x.messageId, None) }
       true
     case _ ⇒ false
   }
@@ -513,7 +514,7 @@ private[akka] class DeadLetterActorRef(_provider: ActorRefProvider,
 
   override def !(message: Any)(implicit sender: ActorRef = this): Unit = message match {
     case null                ⇒ throw new InvalidMessageException("Message is null")
-    case Identify(messageId) ⇒ sender ! ActorIdentity(this, messageId)
+    case Identify(messageId) ⇒ sender ! ActorIdentity(messageId, Some(this))
     case d: DeadLetter       ⇒ if (!specialHandle(d.message, d.sender)) eventStream.publish(d)
     case _ ⇒ if (!specialHandle(message, sender))
       eventStream.publish(DeadLetter(message, if (sender eq Actor.noSender) provider.deadLetters else sender, this))
@@ -526,10 +527,10 @@ private[akka] class DeadLetterActorRef(_provider: ActorRefProvider,
       true
     case w: Unwatch ⇒ true // Just ignore
     case Identify(messageId) ⇒
-      sender ! UnknownActorIdentity(messageId)
+      sender ! ActorIdentity(messageId, None)
       true
     case s: SelectChildName ⇒
-      s.identifyRequest foreach { x ⇒ sender ! UnknownActorIdentity(x.messageId) }
+      s.identifyRequest foreach { x ⇒ sender ! ActorIdentity(x.messageId, None) }
       true
     case NullMessage ⇒ true
     case _           ⇒ false
